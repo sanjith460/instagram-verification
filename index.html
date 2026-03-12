@@ -300,90 +300,88 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Firebase SDK (loaded dynamically on connect) -->
+<!-- Firebase SDK -->
 <script type="module">
 
-  // ============================================================
-  //  🔥 PASTE YOUR FIREBASE CONFIG HERE  (lines 1–8 below)
-  // ============================================================
+  // ================================================================
+  //  🔥 STEP 1 — PASTE YOUR FIREBASE CONFIG VALUES BELOW
+  // ================================================================
   const firebaseConfig = {
-  apiKey: "AIzaSyD-BG5jnFXEmRSzT8-bdLZs2L83Xo3WCFI",
-  authDomain: "go-heal-896c7.firebaseapp.com",
-  databaseURL: "https://go-heal-896c7-default-rtdb.firebaseio.com",
-  projectId: "go-heal-896c7",
-  storageBucket: "go-heal-896c7.firebasestorage.app",
-  messagingSenderId: "396181307278",
-  appId: "1:396181307278:web:91697f31a7e21d8505eedf",
-  measurementId: "G-VGW8B9FLNG"
+    apiKey:            "YOUR_API_KEY",              // From Firebase Console
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID",
+    databaseURL:       "https://go-heal-896c7-default-rtdb.firebaseio.com/:"  // 🔑 Realtime DB URL
   };
-  // ============================================================
+  // ================================================================
 
   let auth = null;
+  let db   = null;   // Realtime Database instance
+
   let _signIn, _signInPopup, _GoogleAuth;
+  let _rtdbRef, _rtdbPush, _rtdbSet, _rtdbGet, _rtdbServerTimestamp;
 
-  // Auto-init Firebase if config is filled in
+  // ── Auto-initialize Firebase on page load ──────────────────────
   (async () => {
-    if (firebaseConfig.apiKey === "YOUR_API_KEY") return; // skip if not configured
-    try {
-      const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-      const fbAuth = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-      _signIn      = fbAuth.signInWithEmailAndPassword;
-      _signInPopup = fbAuth.signInWithPopup;
-      _GoogleAuth  = fbAuth.GoogleAuthProvider;
-      const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-      auth = fbAuth.getAuth(app);
-    } catch(e) { console.error('Firebase auto-init failed:', e); }
-  })();
-
-  window.connectFirebase = async function () {
-    const apiKey        = document.getElementById('fb-apiKey').value.trim();
-    const authDomain    = document.getElementById('fb-authDomain').value.trim();
-    const projectId     = document.getElementById('fb-projectId').value.trim();
-    const storageBucket = document.getElementById('fb-storageBucket').value.trim();
-    const appId         = document.getElementById('fb-appId').value.trim();
-    const statusEl      = document.getElementById('fbStatus');
-
-    if (!apiKey || !authDomain || !projectId) {
-      statusEl.className   = 'firebase-status error';
-      statusEl.textContent = '⚠ API Key, Auth Domain & Project ID are required.';
+    if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+      console.warn("⚠️ Firebase not configured yet.");
       return;
     }
-
-    statusEl.className   = 'firebase-status';
-    statusEl.textContent = '⏳ Connecting to Firebase…';
-    statusEl.style.display = 'block';
-
     try {
-      const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-      const fbAuth = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      // 1. Core app
+      const { initializeApp, getApps, getApp } =
+        await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
 
-      _signIn      = fbAuth.signInWithEmailAndPassword;
-      _signInPopup = fbAuth.signInWithPopup;
-      _GoogleAuth  = fbAuth.GoogleAuthProvider;
+      // 2. Authentication
+      const fbAuth =
+        await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
 
-      const cfg = { apiKey, authDomain, projectId, storageBucket, appId };
-      const app = getApps().length ? getApp() : initializeApp(cfg);
+      // 3. Realtime Database
+      const fbDb =
+        await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+
+      // Store auth helpers
+      _signIn            = fbAuth.signInWithEmailAndPassword;
+      _signInPopup       = fbAuth.signInWithPopup;
+      _GoogleAuth        = fbAuth.GoogleAuthProvider;
+
+      // Store Realtime DB helpers
+      _rtdbRef             = fbDb.ref;
+      _rtdbPush            = fbDb.push;
+      _rtdbSet             = fbDb.set;
+      _rtdbGet             = fbDb.get;
+      _rtdbServerTimestamp = fbDb.serverTimestamp;
+
+      // Initialize app (avoid duplicate)
+      const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+      // Get Auth instance
       auth = fbAuth.getAuth(app);
 
-      statusEl.className   = 'firebase-status success';
-      statusEl.textContent = '✅ Firebase connected! Ready to log in.';
-      showToast('🔥 Firebase connected!');
-    } catch (err) {
-      statusEl.className   = 'firebase-status error';
-      statusEl.textContent = '❌ ' + (err.message || 'Connection failed.');
+      // Get Realtime Database instance using databaseURL
+      db = fbDb.getDatabase(app, firebaseConfig.databaseURL);
+
+      console.log("✅ Firebase Auth connected");
+      console.log("✅ Realtime Database connected →", firebaseConfig.databaseURL);
+
+    } catch(e) {
+      console.error("❌ Firebase init failed:", e);
     }
-  };
+  })();
 
+  // ── Login handler ───────────────────────────────────────────────
   window.handleLogin = async function () {
-    const user   = document.getElementById('username').value.trim();
-    const pass   = document.getElementById('password').value;
-    const btn    = document.getElementById('loginBtn');
-    const errEl  = document.getElementById('errMsg');
+    const user  = document.getElementById("username").value.trim();
+    const pass  = document.getElementById("password").value;
+    const btn   = document.getElementById("loginBtn");
+    const errEl = document.getElementById("errMsg");
 
-    errEl.classList.remove('show');
+    errEl.classList.remove("show");
 
     if (!auth) {
-      showToast('⚠ Please connect Firebase first.');
+      showToast("⚠ Firebase not ready. Check your config.");
       return;
     }
 
@@ -391,45 +389,46 @@
     btn.disabled  = true;
 
     try {
-      const userCredential = await _signIn(auth, user, pass);
-      const uid = userCredential.user.uid;
+      // ── Sign in via Firebase Auth ──
+      const credential = await _signIn(auth, user, pass);
+      const uid        = credential.user.uid;
 
-      // ── Write login event to Realtime Database ──
-      if (db && _dbRef && _dbPush) {
+      // ── Write login record to Realtime Database ──
+      if (db && _rtdbRef && _rtdbPush) {
         try {
-          // Log to: /loginEvents/<uid>/<pushKey>
-          const logsRef = _dbRef(db, 'loginEvents/' + uid);
-          await _dbPush(logsRef, {
-            email:     userCredential.user.email,
-            timestamp: _dbServerTimestamp(),
-            userAgent: navigator.userAgent.slice(0, 100)
+          const loginRef = _rtdbRef(db, "loginEvents/" + uid);
+          await _rtdbPush(loginRef, {
+            email:     credential.user.email || user,
+            timestamp: _rtdbServerTimestamp(),   // server-side time
+            userAgent: navigator.userAgent.slice(0, 120)
           });
-          console.log('📝 Login event saved to Realtime Database');
-        } catch(dbErr) {
-          console.warn('DB write failed (check rules):', dbErr.message);
+          console.log("📝 Login event saved to Realtime Database under /loginEvents/" + uid);
+        } catch (dbErr) {
+          console.warn("DB write skipped (check rules):", dbErr.message);
         }
       }
 
-      btn.innerHTML         = '✓ Logged in!';
-      btn.style.background  = '#00c853';
-      btn.style.color       = '#fff';
-      showToast('Welcome back! 🎉');
+      btn.innerHTML        = "✓ Logged in!";
+      btn.style.background = "#00c853";
+      btn.style.color      = "#fff";
+      showToast("Welcome back! 🎉");
+
     } catch (err) {
-      btn.innerHTML = 'Log in';
+      btn.innerHTML = "Log in";
       btn.disabled  = false;
-      errEl.classList.add('show');
-      const card = document.getElementById('loginCard');
-      card.classList.add('shake');
-      setTimeout(() => card.classList.remove('shake'), 500);
+      errEl.classList.add("show");
+      const card = document.getElementById("loginCard");
+      card.classList.add("shake");
+      setTimeout(() => card.classList.remove("shake"), 500);
     }
   };
 
   window.handleFbLogin = function () {
-    if (!auth) { showToast('⚠ Connect Firebase first.'); return; }
+    if (!auth) { showToast("⚠ Firebase not ready."); return; }
     const provider = new _GoogleAuth();
     _signInPopup(auth, provider)
-      .then(() => showToast('Logged in! 🎉'))
-      .catch(e  => showToast('Error: ' + e.message));
+      .then(() => showToast("Logged in! 🎉"))
+      .catch(e  => showToast("Error: " + e.message));
   };
 </script>
 
