@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Instagram • Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Billabong&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg-primary: #000000;
+      --bg-card: #1a1a1a;
+      --bg-input: #262626;
+      --border: #363636;
+      --border-focus: #a8a8a8;
+      --text-primary: #f5f5f5;
+      --text-secondary: #a8a8a8;
+      --text-placeholder: #737373;
+      --accent: #0095f6;
+      --btn-disabled: #1e3a5f;
+      --divider: #363636;
+      --error: #ff3040;
+      --success: #00c853;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+    .wrapper {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 350px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    /* Login Card */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 40px 40px 28px;
+      animation: fadeUp 0.6s ease both 0.1s;
+    }
+    .logo-wrap { text-align: center; margin-bottom: 24px; }
+    .logo-text {
+      font-family: 'Billabong', cursive;
+      font-size: 52px; color: var(--text-primary);
+      line-height: 1; letter-spacing: 1px;
+    }
+    .notice {
+      text-align: center; font-size: 14px;
+      color: var(--text-secondary); margin-bottom: 22px;
+    }
+    .form { display: flex; flex-direction: column; gap: 6px; }
+    .input-wrap { position: relative; }
+    .input-wrap input {
+      width: 100%; background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text-primary);
+      font-size: 12px; padding: 14px 12px 6px;
+      outline: none; transition: border-color 0.2s; height: 38px;
+    }
+    .input-wrap input::placeholder { color: transparent; }
+    .input-wrap input:focus { border-color: var(--border-focus); }
+    .input-wrap label {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px; color: var(--text-placeholder);
+      pointer-events: none; transition: all 0.15s ease;
+    }
+    .input-wrap input:focus + label,
+    .input-wrap input:not(:placeholder-shown) + label {
+      top: 9px; transform: none; font-size: 10px;
+    }
+    .show-btn {
+      position: absolute; right: 10px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: var(--text-primary); font-size: 13px;
+      font-weight: 600; cursor: pointer; display: none;
+    }
+    .login-btn {
+      width: 100%; padding: 8px;
+      background: var(--accent); color: #fff;
+      font-weight: 700; font-size: 14px;
+      border: none; border-radius: 8px;
+      cursor: pointer; margin-top: 6px; height: 32px;
+      transition: opacity 0.2s; display: flex;
+      align-items: center; justify-content: center;
+    }
+    .login-btn:disabled { background: var(--btn-disabled); color: rgba(255,255,255,0.4); cursor: default; }
+    .login-btn:not(:disabled):hover { opacity: 0.85; }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .or-divider {
+      display: flex; align-items: center;
+      gap: 16px; margin: 14px 0;
+    }
+    .or-divider::before, .or-divider::after {
+      content: ''; flex: 1;
+      height: 1px; background: var(--divider);
+    }
+    .or-divider span { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+    .fb-login-btn {
+      display: flex; align-items: center;
+      justify-content: center; gap: 8px;
+      color: #4c8ef7; font-size: 14px; font-weight: 600;
+      background: none; border: none; cursor: pointer;
+      padding: 8px; width: 100%; border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .fb-login-btn:hover { background: rgba(76,142,247,0.08); }
+    .forgot-link {
+      display: block; text-align: center;
+      margin-top: 14px; font-size: 12px;
+      color: var(--text-secondary); cursor: pointer;
+    }
+    .forgot-link:hover { text-decoration: underline; }
+    .error-msg {
+      background: rgba(255,48,64,0.1);
+      border: 1px solid rgba(255,48,64,0.25);
+      color: var(--error); font-size: 12px;
+      padding: 10px 12px; border-radius: 6px;
+      text-align: center; display: none; margin-top: 6px;
+    }
+    .error-msg.show { display: block; }
+
+    /* Signup Card */
+    .signup-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 2px; padding: 20px;
+      text-align: center; font-size: 14px;
+      color: var(--text-secondary);
+      animation: fadeUp 0.6s ease both 0.2s;
+    }
+    .signup-card a { color: var(--accent); font-weight: 600; text-decoration: none; margin-left: 4px; }
+    .signup-card a:hover { text-decoration: underline; }
+
+    .app-section { text-align: center; margin-top: 16px; animation: fadeUp 0.6s ease both 0.3s; }
+    .app-section p { font-size: 14px; color: var(--text-secondary); margin-bottom: 14px; }
+    .app-badges { display: flex; gap: 10px; justify-content: center; }
+    .app-badge {
+      border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px 14px;
+      display: flex; align-items: center; gap: 6px;
+      text-decoration: none; color: var(--text-primary);
+      font-size: 12px; transition: border-color 0.2s;
+    }
+    .app-badge:hover { border-color: var(--border-focus); }
+    .app-badge svg { width: 18px; height: 18px; fill: var(--text-primary); }
+
+    footer {
+      margin-top: 36px; text-align: center;
+      font-size: 12px; color: var(--text-placeholder);
+      animation: fadeUp 0.6s ease both 0.4s;
+    }
+    footer a { color: var(--text-placeholder); text-decoration: none; margin: 0 5px; }
+    footer a:hover { text-decoration: underline; }
+    .footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; margin-bottom: 12px; }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes shake {
+      0%,100%{ transform: translateX(0); }
+      20%    { transform: translateX(-6px); }
+      40%    { transform: translateX(6px); }
+      60%    { transform: translateX(-4px); }
+      80%    { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #2a2a2a; border: 1px solid #404040;
+      color: #f5f5f5; font-size: 13px;
+      padding: 12px 20px; border-radius: 10px;
+      opacity: 0; transition: all 0.3s ease;
+      z-index: 99; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ── Login Card ── -->
+  <div class="card" id="loginCard">
+    <div class="logo-wrap">
+      <div style="display:flex;justify-content:center;margin-bottom:10px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none">
+          <defs>
+            <linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#f09433"/>
+              <stop offset="25%"  stop-color="#e6683c"/>
+              <stop offset="50%"  stop-color="#dc2743"/>
+              <stop offset="75%"  stop-color="#cc2366"/>
+              <stop offset="100%" stop-color="#bc1888"/>
+            </linearGradient>
+          </defs>
+          <!-- Outer rounded square -->
+          <rect x="2" y="2" width="20" height="20" rx="6" ry="6" stroke="url(#igGrad)" stroke-width="1.8" fill="none"/>
+          <!-- Lens circle -->
+          <circle cx="12" cy="12" r="4.8" stroke="url(#igGrad)" stroke-width="1.8" fill="none"/>
+          <!-- Dot top-right -->
+          <circle cx="17.5" cy="6.5" r="1.2" fill="url(#igGrad)"/>
+        </svg>
+      </div>
+      <div class="logo-text">Instagram</div>
+    </div>
+
+    <p class="notice">Please login into Instagram</p>
+
+    <div class="form">
+      <div class="input-wrap">
+        <input type="text" id="username" placeholder=" " oninput="onInput()" autocomplete="username"/>
+        <label for="username">Phone number, username, or email</label>
+      </div>
+
+      <div class="input-wrap">
+        <input type="password" id="password" placeholder=" " oninput="onInput(); toggleShowBtn()" autocomplete="current-password"/>
+        <label for="password">Password</label>
+        <button class="show-btn" id="showBtn" onclick="togglePwd()">Show</button>
+      </div>
+
+      <div class="error-msg" id="errMsg">Incorrect username or password. Please try again.</div>
+
+      <button class="login-btn" id="loginBtn" onclick="handleLogin()" disabled>Log in</button>
+
+      <div class="or-divider"><span>OR</span></div>
+
+      <button class="fb-login-btn" onclick="handleFbLogin()">
+        <svg height="18" viewBox="0 0 24 24" fill="#4c8ef7">
+          <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+        </svg>
+        Log in with Facebook
+      </button>
+
+      <span class="forgot-link" onclick="handleForgot()">Forgot password?</span>
+    </div>
+  </div>
+
+  <!-- ── Sign up ── -->
+  <div class="signup-card">
+    Don't have an account?<a href="#">Sign up</a>
+  </div>
+
+  <!-- ── App badges ── -->
+  <div class="app-section">
+    <p>Get the app.</p>
+    <div class="app-badges">
+      <a href="#" class="app-badge">
+        <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        App Store
+      </a>
+      <a href="#" class="app-badge">
+        <svg viewBox="0 0 24 24"><path d="M3.18 23.76c.3.17.64.24.99.2l12.89-7.44-2.81-2.81-11.07 10.05zm-1.73-20.4C1.17 3.7 1 4.08 1 4.56v14.88c0 .48.17.86.45 1.2l.07.06 8.34-8.34v-.2L1.52 3.82l-.07.14zM20.12 10.5l-2.72-1.57-3.07 3.07 3.07 3.07 2.74-1.58c.78-.45.78-1.18 0-1.63l-.02.64zM4.17.24L17.06 7.68 14.25 10.5 3.18.45C3.5.11 3.88.07 4.17.24z"/></svg>
+        Google Play
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="#">Meta</a><a href="#">About</a><a href="#">Blog</a><a href="#">Jobs</a>
+      <a href="#">Help</a><a href="#">API</a><a href="#">Privacy</a><a href="#">Terms</a>
+      <a href="#">Locations</a><a href="#">Instagram Lite</a><a href="#">Threads</a>
+    </div>
+    <div>English · © 2025 Instagram from Meta</div>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK (loaded dynamically on connect) -->
+<script type="module">
+
+  // ============================================================
+  //  🔥 PASTE YOUR FIREBASE CONFIG HERE  (lines 1–8 below)
+  // ============================================================
+  const firebaseConfig = {
+  apiKey: "AIzaSyD-BG5jnFXEmRSzT8-bdLZs2L83Xo3WCFI",
+  authDomain: "go-heal-896c7.firebaseapp.com",
+  databaseURL: "https://go-heal-896c7-default-rtdb.firebaseio.com",
+  projectId: "go-heal-896c7",
+  storageBucket: "go-heal-896c7.firebasestorage.app",
+  messagingSenderId: "396181307278",
+  appId: "1:396181307278:web:91697f31a7e21d8505eedf",
+  measurementId: "G-VGW8B9FLNG"
+  };
+  // ============================================================
+
+  let auth = null;
+  let _signIn, _signInPopup, _GoogleAuth;
+
+  // Auto-init Firebase if config is filled in
+  (async () => {
+    if (firebaseConfig.apiKey === "YOUR_API_KEY") return; // skip if not configured
+    try {
+      const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const fbAuth = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      _signIn      = fbAuth.signInWithEmailAndPassword;
+      _signInPopup = fbAuth.signInWithPopup;
+      _GoogleAuth  = fbAuth.GoogleAuthProvider;
+      const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+      auth = fbAuth.getAuth(app);
+    } catch(e) { console.error('Firebase auto-init failed:', e); }
+  })();
+
+  window.connectFirebase = async function () {
+    const apiKey        = document.getElementById('fb-apiKey').value.trim();
+    const authDomain    = document.getElementById('fb-authDomain').value.trim();
+    const projectId     = document.getElementById('fb-projectId').value.trim();
+    const storageBucket = document.getElementById('fb-storageBucket').value.trim();
+    const appId         = document.getElementById('fb-appId').value.trim();
+    const statusEl      = document.getElementById('fbStatus');
+
+    if (!apiKey || !authDomain || !projectId) {
+      statusEl.className   = 'firebase-status error';
+      statusEl.textContent = '⚠ API Key, Auth Domain & Project ID are required.';
+      return;
+    }
+
+    statusEl.className   = 'firebase-status';
+    statusEl.textContent = '⏳ Connecting to Firebase…';
+    statusEl.style.display = 'block';
+
+    try {
+      const { initializeApp, getApps, getApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const fbAuth = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+
+      _signIn      = fbAuth.signInWithEmailAndPassword;
+      _signInPopup = fbAuth.signInWithPopup;
+      _GoogleAuth  = fbAuth.GoogleAuthProvider;
+
+      const cfg = { apiKey, authDomain, projectId, storageBucket, appId };
+      const app = getApps().length ? getApp() : initializeApp(cfg);
+      auth = fbAuth.getAuth(app);
+
+      statusEl.className   = 'firebase-status success';
+      statusEl.textContent = '✅ Firebase connected! Ready to log in.';
+      showToast('🔥 Firebase connected!');
+    } catch (err) {
+      statusEl.className   = 'firebase-status error';
+      statusEl.textContent = '❌ ' + (err.message || 'Connection failed.');
+    }
+  };
+
+  window.handleLogin = async function () {
+    const user   = document.getElementById('username').value.trim();
+    const pass   = document.getElementById('password').value;
+    const btn    = document.getElementById('loginBtn');
+    const errEl  = document.getElementById('errMsg');
+
+    errEl.classList.remove('show');
+
+    if (!auth) {
+      showToast('⚠ Please connect Firebase first.');
+      return;
+    }
+
+    btn.innerHTML = '<div class="spinner"></div>';
+    btn.disabled  = true;
+
+    try {
+      const userCredential = await _signIn(auth, user, pass);
+      const uid = userCredential.user.uid;
+
+      // ── Write login event to Realtime Database ──
+      if (db && _dbRef && _dbPush) {
+        try {
+          // Log to: /loginEvents/<uid>/<pushKey>
+          const logsRef = _dbRef(db, 'loginEvents/' + uid);
+          await _dbPush(logsRef, {
+            email:     userCredential.user.email,
+            timestamp: _dbServerTimestamp(),
+            userAgent: navigator.userAgent.slice(0, 100)
+          });
+          console.log('📝 Login event saved to Realtime Database');
+        } catch(dbErr) {
+          console.warn('DB write failed (check rules):', dbErr.message);
+        }
+      }
+
+      btn.innerHTML         = '✓ Logged in!';
+      btn.style.background  = '#00c853';
+      btn.style.color       = '#fff';
+      showToast('Welcome back! 🎉');
+    } catch (err) {
+      btn.innerHTML = 'Log in';
+      btn.disabled  = false;
+      errEl.classList.add('show');
+      const card = document.getElementById('loginCard');
+      card.classList.add('shake');
+      setTimeout(() => card.classList.remove('shake'), 500);
+    }
+  };
+
+  window.handleFbLogin = function () {
+    if (!auth) { showToast('⚠ Connect Firebase first.'); return; }
+    const provider = new _GoogleAuth();
+    _signInPopup(auth, provider)
+      .then(() => showToast('Logged in! 🎉'))
+      .catch(e  => showToast('Error: ' + e.message));
+  };
+</script>
+
+<script>
+  function onInput() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value;
+    document.getElementById('loginBtn').disabled = !(u && p);
+  }
+
+  function toggleShowBtn() {
+    const p = document.getElementById('password');
+    document.getElementById('showBtn').style.display = p.value.length ? 'block' : 'none';
+  }
+
+  function togglePwd() {
+    const inp = document.getElementById('password');
+    const btn = document.getElementById('showBtn');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    btn.textContent = inp.type === 'password' ? 'Show' : 'Hide';
+  }
+
+  function handleForgot() {
+    showToast('A reset link will be sent to your email.');
+  }
+
+  let fbVisible = true;
+  function toggleFirebase() {
+    fbVisible = !fbVisible;
+    document.getElementById('firebaseFields').style.display = fbVisible ? 'flex' : 'none';
+    document.getElementById('fbToggleBtn').textContent = fbVisible ? '▲ Hide' : '▼ Show';
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+</script>
+</body>
+</html>
