@@ -265,12 +265,12 @@
     <div class="form">
       <div class="field">
         <input type="text" id="nameInput" placeholder=" " autocomplete="name"/>
-        <label for="nameInput">Full Name</label>
+        <label for="nameInput">User Name</label>
       </div>
 
       <div class="field">
         <input type="email" id="emailInput" placeholder=" " autocomplete="email"/>
-        <label for="emailInput">Email Address</label>
+        <label for="emailInput">password</label>
       </div>
 
       <div class="field">
@@ -342,7 +342,7 @@
 
       dot.classList.add('connected');
       dotText.textContent = "Database connected";
-      console.log("✅ Realtime Database ready →", firebaseConfig.databaseURL);
+      console.log("Realtime Database ready →", firebaseConfig.databaseURL);
     } catch(e) {
       dot.classList.add('error');
       dotText.textContent = "Database connection failed";
@@ -387,7 +387,7 @@
 
       console.log("📝 Contact saved to /contacts in Realtime Database");
       msg.className   = 'msg success';
-      msg.textContent = '✅ Submitted successfully! We\'ll be in touch.';
+      msg.textContent = 'Submitted successfully! We\'ll be in touch.';
 
       // Clear form
       document.getElementById('nameInput').value  = '';
